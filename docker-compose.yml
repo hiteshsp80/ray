@@ -1,6 +1,8 @@
+version: '3.8'
+
 services:
   moodle:
-    build: .
+    build: ./apache
     ports:
       - "8080:80"
     volumes:
@@ -14,7 +16,7 @@ services:
       - MOODLE_DATABASE_HOST=db
     depends_on:
       - db
-    command: bash -c "chown -R www-data:www-data /var/www && apache2-foreground"
+    command: apache2-foreground
 
   db:
     image: mysql:5.7
