@@ -1,4 +1,4 @@
-username,password,firstname,LastName,Email,Role
+username,password,firstname,lastName,email,role
 student1,Password@123,Liam,Smith,student1@example.com,student
 student2,Password@123,Olivia,Johnson,student2@example.com,student
 student3,Password@123,Noah,Williams,student3@example.com,student
