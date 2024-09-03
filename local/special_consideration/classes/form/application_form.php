@@ -6,11 +6,21 @@ defined('MOODLE_INTERNAL') || die();
 require_once("$CFG->libdir/formslib.php");
 
 class application_form extends \moodleform {
-    public function definition() {
+    protected function definition() {
         global $USER, $DB;
 
         $mform = $this->_form;
         $course = $this->_customdata['course'];
+        $editing = !empty($this->_customdata['editing']);
+
+        // Add hidden fields
+        $mform->addElement('hidden', 'courseid', $course->id);
+        $mform->setType('courseid', PARAM_INT);
+
+        if ($editing) {
+            $mform->addElement('hidden', 'id');
+            $mform->setType('id', PARAM_INT);
+        }
 
         // Student Name (auto-filled)
         $mform->addElement('static', 'studentname', get_string('studentname', 'local_special_consideration'), fullname($USER));
@@ -35,9 +45,9 @@ class application_form extends \moodleform {
         $modinfo = get_fast_modinfo($course);
         $assessments = array('' => get_string('selectassessment', 'local_special_consideration'));
         foreach ($modinfo->get_cms() as $cm) {
-            // Include all module types that could be considered assessments
             if (in_array($cm->modname, ['assign', 'quiz'])) {
                 $assessments[$cm->id] = $cm->name;
+                // $assessments[$cm->name] = $cm->name;
             }
         }
         $mform->addElement('select', 'affectedassessment', get_string('affectedassessment', 'local_special_consideration'), $assessments);
@@ -59,6 +69,9 @@ class application_form extends \moodleform {
         // Additional Comments
         $mform->addElement('textarea', 'additionalcomments', get_string('additionalcomments', 'local_special_consideration'));
         $mform->setType('additionalcomments', PARAM_TEXT);
+
+        $mform->addElement('hidden', 'courseid', optional_param('courseid', 0, PARAM_INT));
+        $mform->setType('courseid', PARAM_INT);
 
         $this->add_action_buttons();
     }

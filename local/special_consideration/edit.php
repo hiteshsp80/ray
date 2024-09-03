@@ -5,6 +5,10 @@ require_once($CFG->dirroot.'/local/special_consideration/classes/form/applicatio
 $id = required_param('id', PARAM_INT);
 $courseid = optional_param('courseid', 0, PARAM_INT);
 
+if ($id == 0) {
+    print_error('missingparam', 'local_special_consideration', '', 'id');
+}
+
 $application = $DB->get_record('local_special_consideration', array('id' => $id), '*', MUST_EXIST);
 
 if ($courseid == 0) {
@@ -32,8 +36,9 @@ $PAGE->set_heading($course->fullname);
 $mform = new \local_special_consideration\form\application_form(null, array('course' => $course));
 
 // Fill form with existing data
-$application->assessments = json_decode($application->assessments);
-$mform->set_data($application);
+$formdata = (array)$application;
+$formdata['courseid'] = $courseid;
+$mform->set_data($formdata);
 
 if ($mform->is_cancelled()) {
     redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)));
