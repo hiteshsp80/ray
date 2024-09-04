@@ -19,6 +19,7 @@ services:
 
   db:
     image: mysql:5.7
+    platform: linux/amd64
     volumes:
       - dbdata:/var/lib/mysql
     environment:

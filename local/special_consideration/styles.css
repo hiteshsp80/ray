@@ -1,0 +1,20 @@
+.create-new-application {
+    margin-bottom: 20px;
+}
+
+.create-new-application .btn {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    color: white;
+}
+
+.create-new-application .btn:hover {
+    background-color: #003d7a;
+    border-color: #003d7a;
+}
+
+.divider {
+    margin: 30px 0;
+    border: 0;
+    border-top: 1px solid #e9ecef;
+}

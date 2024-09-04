@@ -49,14 +49,13 @@ RUN a2enmod rewrite && echo "Apache mod_rewrite enabled successfully"
 # Set the working directory
 WORKDIR /var/www/html
 
-# Download and extract Moodle
-RUN curl -L https://download.moodle.org/download.php/direct/stable39/moodle-latest-39.tgz -o moodle.tgz \
-    # RUN curl -L https://download.moodle.org/download.php/stable404/moodle-4.4.2.tgz -o moodle.tgz \
+# Download and extract Moodle 4.1
+RUN curl -L https://download.moodle.org/download.php/direct/stable401/moodle-latest-401.tgz -o moodle.tgz \
     && tar -zxvf moodle.tgz \
     && mv moodle/* /var/www/html/ \
     && rm -rf moodle moodle.tgz \
     && chown -R www-data:www-data /var/www/html \
-    && echo "Moodle downloaded and extracted successfully"
+    && echo "Moodle 4.1 downloaded and extracted successfully"
 
 # Create Moodle data directory and set correct ownership
 RUN mkdir -p /var/www/moodledata && \
