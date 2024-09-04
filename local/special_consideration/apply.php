@@ -54,6 +54,18 @@ if ($mform->is_cancelled()) {
 
     if (!empty($fromform->supportingdocs)) {
         file_save_draft_area_files($fromform->supportingdocs, $context->id, 'local_special_consideration', 'supportingdocs', $applicationid);
+    
+        // Update the application record with the file area ID
+        $application->id = $applicationid;
+        $application->supportingdocs = $fromform->supportingdocs;
+        $DB->update_record('local_special_consideration', $application);
+        // Debugging
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($context->id, 'local_special_consideration', 'supportingdocs', $applicationid, 'id', false);
+        error_log('Files saved: ' . count($files));
+        foreach ($files as $file) {
+            error_log('File saved: ' . $file->get_filename());
+        }
     }
 
     redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)),
