@@ -5,6 +5,11 @@ require_once($CFG->dirroot.'/local/special_consideration/classes/form/applicatio
 $id = required_param('id', PARAM_INT);
 $courseid = optional_param('courseid', 0, PARAM_INT);
 
+// If no id is provided, redirect to the apply.php page
+if ($id == 0) {
+    redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)));
+}
+
 $application = $DB->get_record('local_special_consideration', array('id' => $id), '*', MUST_EXIST);
 
 if ($courseid == 0) {
@@ -27,6 +32,28 @@ $PAGE->set_title(get_string('viewapplication', 'local_special_consideration'));
 $PAGE->set_heading($course->fullname);
 
 $user = $DB->get_record('user', array('id' => $application->userid));
+
+// Handle form submission
+if (has_capability('local/special_consideration:manage', $context)) {
+    $mform = new \local_special_consideration\form\response_form();
+    
+    if ($mform->is_cancelled()) {
+        redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)));
+    } else if ($fromform = $mform->get_data()) {
+        // Update the application status and feedback
+        $application->status = $fromform->status;
+        $application->feedback = $fromform->feedback;
+        $application->timemodified = time();
+        
+        $DB->update_record('local_special_consideration', $application);
+        
+        // Redirect back to the list of applications
+        redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)),
+                 get_string('applicationupdated', 'local_special_consideration'),
+                 null,
+                 \core\output\notification::NOTIFY_SUCCESS);
+    }
+}
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('applicationdetails', 'local_special_consideration'));
@@ -94,9 +121,39 @@ $back_url = new moodle_url('/local/special_consideration/apply.php', array('cour
 echo $OUTPUT->single_button($back_url, get_string('backtoapplications', 'local_special_consideration'), 'get');
 
 // Display response form for staff
-if (has_capability('local/special_consideration:manage', $context)) {
+if (has_capability('local/special_consideration:manage', $context) && $application->status == 'pending') {
     $mform = new \local_special_consideration\form\response_form();
+    
+    if ($mform->is_cancelled()) {
+        redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)));
+    } else if ($fromform = $mform->get_data()) {
+        // Update the application status and feedback
+        $application->status = $fromform->status;
+        $application->feedback = $fromform->feedback;
+        $application->timemodified = time();
+        
+        $DB->update_record('local_special_consideration', $application);
+        
+        // Redirect back to the list of applications
+        redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)),
+                 get_string('applicationupdated', 'local_special_consideration'),
+                 null,
+                 \core\output\notification::NOTIFY_SUCCESS);
+    }
+    
+    // Set default values if the application already has a status and feedback
+    $mform->set_data(array(
+        'id' => $application->id,
+        'status' => $application->status,
+        'feedback' => $application->feedback
+    ));
+    
     $mform->display();
+} elseif (has_capability('local/special_consideration:manage', $context)) {
+    // If the application has already been responded to, display the response instead of the form
+    echo html_writer::tag('h4', get_string('response', 'local_special_consideration'));
+    echo html_writer::tag('p', get_string('status', 'local_special_consideration') . ': ' . $application->status);
+    echo html_writer::tag('p', get_string('feedback', 'local_special_consideration') . ': ' . $application->feedback);
 }
 
 echo $OUTPUT->footer();

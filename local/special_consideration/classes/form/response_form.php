@@ -9,6 +9,9 @@ class response_form extends \moodleform {
     public function definition() {
         $mform = $this->_form;
 
+        $mform->addElement('hidden', 'id');
+        $mform->setType('id', PARAM_INT);
+
         $statuses = array(
             'approved' => get_string('approved', 'local_special_consideration'),
             'declined' => get_string('declined', 'local_special_consideration'),
