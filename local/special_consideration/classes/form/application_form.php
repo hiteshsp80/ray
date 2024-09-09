@@ -26,10 +26,13 @@ class application_form extends \moodleform {
         $mform->addElement('static', 'studentname', get_string('studentname', 'local_special_consideration'), fullname($USER));
 
         // Student ID (auto-filled)
-        $mform->addElement('text', 'studentid', get_string('studentid', 'local_special_consideration'));
-        $mform->setType('studentid', PARAM_TEXT);
-        $mform->setDefault('studentid', $USER->idnumber);
-        $mform->addRule('studentid', null, 'required', null, 'client');
+        // $mform->addElement('text', 'studentid', get_string('studentid', 'local_special_consideration'));
+        // $mform->setType('id', PARAM_TEXT);
+        // $mform->setDefault('studentid', $USER->idnumber);
+        // $mform->addRule('studentid', null, 'required', null, 'client');
+        // $mform->addElement('static', 'studentid', get_string('studentid', 'local_special_consideration'), $customStudentId);
+        $mform->addElement('static', 'studentid', get_string('studentid', 'local_special_consideration'), $USER->id);
+
 
         // Application Type
         $types = array(
@@ -64,7 +67,7 @@ class application_form extends \moodleform {
 
         // Supporting Documentation Upload
         $mform->addElement('filemanager', 'supportingdocs', get_string('supportingdocs', 'local_special_consideration'), null, 
-                           array('maxbytes' => 10485760, 'accepted_types' => '*'));
+        array('subdirs' => 0, 'maxbytes' => 10485760, 'maxfiles' => -1, 'accepted_types' => '*'));
 
         // Additional Comments
         $mform->addElement('textarea', 'additionalcomments', get_string('additionalcomments', 'local_special_consideration'));
@@ -72,7 +75,7 @@ class application_form extends \moodleform {
 
         $mform->addElement('hidden', 'courseid', optional_param('courseid', 0, PARAM_INT));
         $mform->setType('courseid', PARAM_INT);
-
+// comments
         $this->add_action_buttons();
     }
 }

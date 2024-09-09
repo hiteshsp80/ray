@@ -1,6 +1,7 @@
 <?php
 function local_special_consideration_extend_navigation_course($navigation, $course, $context) {
-    if (has_capability('local/special_consideration:apply', $context)) {
+    if (has_capability('local/special_consideration:apply', $context) || 
+        has_capability('local/special_consideration:manage', $context)) {
         $url = new moodle_url('/local/special_consideration/apply.php', array('courseid' => $course->id));
         $node = navigation_node::create(
             get_string('specialconsideration', 'local_special_consideration'),
@@ -49,3 +50,4 @@ function local_special_consideration_pluginfile($course, $cm, $context, $fileare
     error_log('Item ID: ' . $itemid);
 
     send_stored_file($file, 86400, 0, $forcedownload, $options);
+}
