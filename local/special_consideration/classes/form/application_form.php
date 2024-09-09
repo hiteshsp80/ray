@@ -75,7 +75,7 @@ class application_form extends \moodleform {
 
         $mform->addElement('hidden', 'courseid', optional_param('courseid', 0, PARAM_INT));
         $mform->setType('courseid', PARAM_INT);
-
+// comments
         $this->add_action_buttons();
     }
 }
