@@ -112,17 +112,23 @@ if ($action === 'new') {
             array_splice($table->head, 3, 0, get_string('submitter', 'local_special_consideration'));
         }
 
+        // Check if the user is a student
+        $is_student = has_capability('local/special_consideration:apply', $context) && 
+        !has_capability('local/special_consideration:manage', $context);
+
         foreach ($applications as $application) {
             $viewurl = new moodle_url('/local/special_consideration/view.php', array('id' => $application->id, 'courseid' => $courseid));
             $editurl = new moodle_url('/local/special_consideration/edit.php', array('id' => $application->id, 'courseid' => $courseid));
             
             $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
-            if ($application->status === 'pending' && has_capability('local/special_consideration:apply', $context)) {
-                $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
-                $actions .= ' | ' . html_writer::link('#', get_string('withdraw', 'local_special_consideration'), 
-                    array('class' => 'withdraw-button', 'data-id' => $application->id));
-            }
 
+            // Add edit and withdraw options only for students 
+        if ($is_student && $application->status === 'pending' && $application->userid == $USER->id) {
+            $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
+            $actions .= ' | ' . html_writer::link('#', get_string('withdraw', 'local_special_consideration'), 
+                array('class' => 'withdraw-button', 'data-id' => $application->id));
+        }
+            
             $row = array(
                 userdate($application->timecreated),
                 $application->type,
@@ -143,6 +149,8 @@ if ($action === 'new') {
     }
 }
 
+//Only for student role
+if ($is_student) {
 $PAGE->requires->js_amd_inline("
 require(['jquery'], function($) {
     $('.withdraw-button').on('click', function(e) {
@@ -165,5 +173,5 @@ require(['jquery'], function($) {
     });
 });
 ");
-
+}
 echo $OUTPUT->footer();
