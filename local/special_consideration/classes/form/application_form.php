@@ -65,7 +65,7 @@ class application_form extends \moodleform {
         $mform->setType('reason', PARAM_TEXT);
         $mform->addRule('reason', null, 'required', null, 'client');
 
-        // Supporting Documentation Upload
+        // Supporting Documentation 
         $mform->addElement('filemanager', 'supportingdocs', get_string('supportingdocs', 'local_special_consideration'), null, 
         array('subdirs' => 0, 'maxbytes' => 10485760, 'maxfiles' => -1, 'accepted_types' => '*'));
 
@@ -75,7 +75,7 @@ class application_form extends \moodleform {
 
         $mform->addElement('hidden', 'courseid', optional_param('courseid', 0, PARAM_INT));
         $mform->setType('courseid', PARAM_INT);
-// comments
+
         $this->add_action_buttons();
     }
 }
