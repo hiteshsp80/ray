@@ -21,6 +21,10 @@ function get_readable_type($type) {
     return get_string('type_' . str_replace('-', '_', $type), 'local_special_consideration', $type);
 }
 
+function get_readable_status($status) {
+    return get_string('status_' . $status, 'local_special_consideration', ucfirst($status));
+}
+
 // Check for view capability
 if (!has_capability('local/special_consideration:view', $context)) {
     throw new required_capability_exception($context, 'local/special_consideration:view', 'nopermissions', 'local_special_consideration');
@@ -112,7 +116,7 @@ if ($canManage) {
                 $row = array(
                     userdate($application->timecreated),
                     $displayType,
-                    $application->status,
+                    get_readable_status($application->status), 
                     fullname($application),
                     $actions
                 );
@@ -164,7 +168,7 @@ if ($canManage) {
                     $row = array(
                     userdate($application->timecreated),
                     $displayType, 
-                    $application->status,
+                    get_readable_status($application->status), 
                     fullname($application),
                     $reviewedby,
                     $actions
@@ -214,8 +218,15 @@ if ($canManage) {
                 $editurl = new moodle_url('/local/special_consideration/edit.php', array('id' => $application->id, 'courseid' => $courseid));
                 
                 $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
-                if ($application->status === 'pending') {
+                // if ($application->status === 'pending') {
+                //     $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
+                //     $actions .= ' | ' . html_writer::link('#', get_string('withdraw', 'local_special_consideration'), 
+                //         array('class' => 'withdraw-button', 'data-id' => $application->id));
+                // }
+                if ($application->status === 'pending' || $application->status === 'more_info') {
                     $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
+                }
+                if ($application->status === 'pending') {
                     $actions .= ' | ' . html_writer::link('#', get_string('withdraw', 'local_special_consideration'), 
                         array('class' => 'withdraw-button', 'data-id' => $application->id));
                 }
@@ -225,7 +236,7 @@ if ($canManage) {
                 $row = array(
                     userdate($application->timecreated),
                     $displayType,
-                    $application->status,
+                    get_readable_status($application->status), 
                     $actions
                 );
 
