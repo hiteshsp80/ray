@@ -17,6 +17,10 @@ $context = context_course::instance($courseid);
 
 require_login($course);
 
+function get_readable_type($type) {
+    return get_string('type_' . str_replace('-', '_', $type), 'local_special_consideration', $type);
+}
+
 // Check for view capability
 if (!has_capability('local/special_consideration:view', $context)) {
     throw new required_capability_exception($context, 'local/special_consideration:view', 'nopermissions', 'local_special_consideration');
@@ -67,111 +71,194 @@ if ($mform->is_cancelled()) {
             null, \core\output\notification::NOTIFY_SUCCESS);
 }
 
-if ($action === 'new') {
-    // Check for apply capability before displaying the form
-    if (!has_capability('local/special_consideration:apply', $context)) {
-        throw new required_capability_exception($context, 'local/special_consideration:apply', 'nopermissions', 'local_special_consideration');
+// Check user roles
+$canManage = has_capability('local/special_consideration:manage', $context);
+$isStudent = has_capability('local/special_consideration:apply', $context) && !$canManage;
+
+if ($canManage) {
+    // Admin/Teacher view
+    if ($action === 'new') {
+        echo html_writer::tag('h3', get_string('newapplication', 'local_special_consideration'));
+        $mform->display();
+    } else {
+        // Pending applications
+        echo html_writer::tag('h3', get_string('pendingapplications', 'local_special_consideration'));
+        
+        $pendingapplications = $DB->get_records_sql(
+            "SELECT sc.*, u.firstname, u.lastname
+             FROM {local_special_consideration} sc
+             JOIN {user} u ON sc.userid = u.id
+             WHERE sc.courseid = :courseid AND sc.status = 'pending'
+             ORDER BY sc.timecreated DESC",
+            array('courseid' => $courseid)
+        );
+
+        if (empty($pendingapplications)) {
+            echo html_writer::tag('p', get_string('nopendingapplications', 'local_special_consideration'));
+        } else {
+            $table = new html_table();
+            $table->head = array(
+                get_string('datesubmitted', 'local_special_consideration'),
+                get_string('type', 'local_special_consideration'),
+                get_string('status', 'local_special_consideration'),
+                get_string('studentname', 'local_special_consideration'),
+                get_string('actions', 'local_special_consideration')
+            );
+            
+            foreach ($pendingapplications as $application) {
+                $viewurl = new moodle_url('/local/special_consideration/view.php', array('id' => $application->id, 'courseid' => $courseid));
+                $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
+                $displayType = get_readable_type($application->type);
+                $row = array(
+                    userdate($application->timecreated),
+                    $displayType,
+                    $application->status,
+                    fullname($application),
+                    $actions
+                );
+
+                $table->data[] = $row;
+            }
+
+            echo html_writer::table($table);
+        }
+
+        echo html_writer::empty_tag('hr', array('class' => 'divider'));
+
+        // Previous applications
+        echo html_writer::tag('h3', get_string('previousapplications', 'local_special_consideration'));
+        
+        $previousapplications = $DB->get_records_sql(
+            "SELECT sc.*, u.firstname, u.lastname, t.firstname AS teacherfirstname, t.lastname AS teacherlastname
+             FROM {local_special_consideration} sc
+             JOIN {user} u ON sc.userid = u.id
+             LEFT JOIN {user} t ON sc.reviewerid = t.id
+             WHERE sc.courseid = :courseid AND sc.status != 'pending'
+             ORDER BY sc.timecreated DESC",
+            array('courseid' => $courseid)
+        );
+
+        if (empty($previousapplications)) {
+            echo html_writer::tag('p', get_string('nopreviousapplications', 'local_special_consideration'));
+        } else {
+            $table = new html_table();
+            $table->head = array(
+                get_string('datesubmitted', 'local_special_consideration'),
+                get_string('type', 'local_special_consideration'),
+                get_string('status', 'local_special_consideration'),
+                get_string('studentname', 'local_special_consideration'),
+                get_string('reviewedby', 'local_special_consideration'),
+                get_string('actions', 'local_special_consideration')
+            );
+
+            foreach ($previousapplications as $application) {
+                $viewurl = new moodle_url('/local/special_consideration/view.php', array('id' => $application->id, 'courseid' => $courseid));
+                $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
+
+                $reviewedby = $application->teacherfirstname && $application->teacherlastname 
+                    ? fullname((object)['firstname' => $application->teacherfirstname, 'lastname' => $application->teacherlastname])
+                    : get_string('notapplicable', 'local_special_consideration');
+
+                    $displayType = get_string('type_' . $application->type, 'local_special_consideration', $application->type);
+                
+                    $row = array(
+                    userdate($application->timecreated),
+                    $displayType, 
+                    $application->status,
+                    fullname($application),
+                    $reviewedby,
+                    $actions
+                );
+
+                $table->data[] = $row;
+            }
+
+            echo html_writer::table($table);
+        }
     }
-    echo html_writer::tag('h3', get_string('newapplication', 'local_special_consideration'));
-    $mform->display();
 } else {
-    // Display "Create New Application" button only if user has apply capability
-    if (has_capability('local/special_consideration:apply', $context)) {
+    // Student view
+    if ($action === 'new') {
+        // Check for apply capability before displaying the form
+        if (!has_capability('local/special_consideration:apply', $context)) {
+            throw new required_capability_exception($context, 'local/special_consideration:apply', 'nopermissions', 'local_special_consideration');
+        }
+        echo html_writer::tag('h3', get_string('newapplication', 'local_special_consideration'));
+        $mform->display();
+    } else {
+        // Display "Create New Application" button
         $create_new_url = new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid, 'action' => 'new'));
         $create_new_button = $OUTPUT->single_button($create_new_url, get_string('createnewapplication', 'local_special_consideration'), 'get');
         echo html_writer::div($create_new_button, 'create-new-application');
-    }
 
-    echo html_writer::empty_tag('hr', array('class' => 'divider'));
+        echo html_writer::empty_tag('hr', array('class' => 'divider'));
 
-    // Display previous applications
-    echo html_writer::tag('h3', get_string('previousapplications', 'local_special_consideration'));
+        // Display previous applications
+        echo html_writer::tag('h3', get_string('previousapplications', 'local_special_consideration'));
 
-    // Check if the user has the capability to manage special consideration requests for the course
-    if (has_capability('local/special_consideration:manage', $context)) {
-        // Get all applications for the course
-        $applications = $DB->get_records('local_special_consideration', array('courseid' => $courseid), 'timecreated DESC');
-    } else {
-        // Get only the applications submitted by the current user
         $applications = $DB->get_records('local_special_consideration', array('userid' => $USER->id, 'courseid' => $courseid), 'timecreated DESC');
-    }
 
-    if (empty($applications)) {
-        echo html_writer::tag('p', get_string('nopreviousapplications', 'local_special_consideration'));
-    } else {
-        $table = new html_table();
-        $table->head = array(
-            get_string('datesubmitted', 'local_special_consideration'),
-            get_string('type', 'local_special_consideration'),
-            get_string('status', 'local_special_consideration'),
-            get_string('actions', 'local_special_consideration')
-        );
-
-        // Add submitter column header if the user has manage capability
-        if (has_capability('local/special_consideration:manage', $context)) {
-            array_splice($table->head, 3, 0, get_string('submitter', 'local_special_consideration'));
-        }
-
-        // Check if the user is a student
-        $is_student = has_capability('local/special_consideration:apply', $context) && 
-        !has_capability('local/special_consideration:manage', $context);
-
-        foreach ($applications as $application) {
-            $viewurl = new moodle_url('/local/special_consideration/view.php', array('id' => $application->id, 'courseid' => $courseid));
-            $editurl = new moodle_url('/local/special_consideration/edit.php', array('id' => $application->id, 'courseid' => $courseid));
-            
-            $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
-
-            // Add edit and withdraw options only for students 
-        if ($is_student && $application->status === 'pending' && $application->userid == $USER->id) {
-            $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
-            $actions .= ' | ' . html_writer::link('#', get_string('withdraw', 'local_special_consideration'), 
-                array('class' => 'withdraw-button', 'data-id' => $application->id));
-        }
-            
-            $row = array(
-                userdate($application->timecreated),
-                $application->type,
-                $application->status,
-                $actions
+        if (empty($applications)) {
+            echo html_writer::tag('p', get_string('nopreviousapplications', 'local_special_consideration'));
+        } else {
+            $table = new html_table();
+            $table->head = array(
+                get_string('datesubmitted', 'local_special_consideration'),
+                get_string('type', 'local_special_consideration'),
+                get_string('status', 'local_special_consideration'),
+                get_string('actions', 'local_special_consideration')
             );
 
-            if (has_capability('local/special_consideration:manage', $context)) {
-                $user = $DB->get_record('user', array('id' => $application->userid), 'firstname, lastname');
-                $submitter = fullname($user);
-                array_splice($row, 3, 0, $submitter);
+            foreach ($applications as $application) {
+                $viewurl = new moodle_url('/local/special_consideration/view.php', array('id' => $application->id, 'courseid' => $courseid));
+                $editurl = new moodle_url('/local/special_consideration/edit.php', array('id' => $application->id, 'courseid' => $courseid));
+                
+                $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
+                if ($application->status === 'pending') {
+                    $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
+                    $actions .= ' | ' . html_writer::link('#', get_string('withdraw', 'local_special_consideration'), 
+                        array('class' => 'withdraw-button', 'data-id' => $application->id));
+                }
+
+                $displayType = get_readable_type($application->type); 
+
+                $row = array(
+                    userdate($application->timecreated),
+                    $displayType,
+                    $application->status,
+                    $actions
+                );
+
+                $table->data[] = $row;
             }
 
-            $table->data[] = $row;
+            echo html_writer::table($table);
         }
 
-        echo html_writer::table($table);
+        // JavaScript for withdraw button
+        $PAGE->requires->js_amd_inline("
+        require(['jquery'], function($) {
+            $('.withdraw-button').on('click', function(e) {
+                e.preventDefault();
+                var applicationId = $(this).data('id');
+                
+                if (window.confirm('Are you sure you want to withdraw this application?')) {
+                    $.post('" . $CFG->wwwroot . "/local/special_consideration/withdraw.php', {
+                        ajax: 1,
+                        id: applicationId,
+                        sesskey: '" . sesskey() . "'
+                    }, function(data) {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert(data.error);
+                        }
+                    }, 'json');
+                }
+            });
+        });
+        ");
     }
 }
 
-//Only for student role
-if ($is_student) {
-$PAGE->requires->js_amd_inline("
-require(['jquery'], function($) {
-    $('.withdraw-button').on('click', function(e) {
-        e.preventDefault();
-        var applicationId = $(this).data('id');
-        
-        if (window.confirm('Are you sure you want to withdraw this application?')) {
-            $.post('" . $CFG->wwwroot . "/local/special_consideration/withdraw.php', {
-                ajax: 1,
-                id: applicationId,
-                sesskey: '" . sesskey() . "'
-            }, function(data) {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.error);
-                }
-            }, 'json');
-        }
-    });
-});
-");
-}
 echo $OUTPUT->footer();

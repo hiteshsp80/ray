@@ -43,6 +43,7 @@ if (has_capability('local/special_consideration:manage', $context)) {
         // Update the application status and feedback
         $application->status = $fromform->status;
         $application->feedback = $fromform->feedback;
+        $application->reviewerid = $USER->id;  
         $application->timemodified = time();
         
         $DB->update_record('local_special_consideration', $application);
@@ -59,11 +60,19 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('applicationdetails', 'local_special_consideration'));
 
 // Display application details
+function get_readable_type($type) {
+    return get_string('type_' . str_replace('-', '_', $type), 'local_special_consideration', $type);
+}
+
 $table = new html_table();
 $table->attributes['class'] = 'generaltable';
 $table->data[] = array(get_string('applicant', 'local_special_consideration'), fullname($user));
 $table->data[] = array(get_string('studentid', 'local_special_consideration'), $user->idnumber);
-$table->data[] = array(get_string('applicationtype', 'local_special_consideration'), $application->type);
+
+$displayType = get_string('type_' . $application->type, 'local_special_consideration', $application->type);
+
+$table->data[] = array(get_string('applicationtype', 'local_special_consideration'), $displayType);
+
 
 // Affected Assessment
 $assessment_name = get_string('notspecified', 'local_special_consideration');
@@ -81,6 +90,12 @@ $table->data[] = array(get_string('additionalcomments', 'local_special_considera
 $table->data[] = array(get_string('status', 'local_special_consideration'), $application->status);
 
 echo html_writer::table($table);
+
+//add reviewer
+if (!empty($application->reviewerid)) {
+    $reviewer = $DB->get_record('user', array('id' => $application->reviewerid));
+    $table->data[] = array(get_string('reviewedby', 'local_special_consideration'), fullname($reviewer));
+}
 
 // Display supporting documents
 if (!empty($application->supportingdocs)) {
