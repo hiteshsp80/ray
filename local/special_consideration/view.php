@@ -5,6 +5,10 @@ require_once($CFG->dirroot.'/local/special_consideration/classes/form/applicatio
 $id = required_param('id', PARAM_INT);
 $courseid = optional_param('courseid', 0, PARAM_INT);
 
+function get_readable_status($status) {
+    return get_string('status_' . $status, 'local_special_consideration', ucfirst($status));
+}
+
 // If no id is provided, redirect to the apply.php page
 if ($id == 0) {
     redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)));
@@ -70,7 +74,7 @@ $table->data[] = array(get_string('applicant', 'local_special_consideration'), f
 $table->data[] = array(get_string('studentid', 'local_special_consideration'), $user->idnumber);
 
 $displayType = get_string('type_' . $application->type, 'local_special_consideration', $application->type);
-
+$table->data[] = array(get_string('status', 'local_special_consideration'), get_readable_status($application->status));
 $table->data[] = array(get_string('applicationtype', 'local_special_consideration'), $displayType);
 
 
@@ -87,8 +91,7 @@ $table->data[] = array(get_string('affectedassessment', 'local_special_considera
 $table->data[] = array(get_string('dateaffected', 'local_special_consideration'), userdate($application->dateaffected));
 $table->data[] = array(get_string('reason', 'local_special_consideration'), $application->reason);
 $table->data[] = array(get_string('additionalcomments', 'local_special_consideration'), $application->additionalcomments);
-$table->data[] = array(get_string('status', 'local_special_consideration'), $application->status);
-
+$table->data[] = array(get_string('status', 'local_special_consideration'), get_readable_status($application->status));
 echo html_writer::table($table);
 
 //add reviewer
@@ -167,7 +170,7 @@ if (has_capability('local/special_consideration:manage', $context) && $applicati
 } elseif (has_capability('local/special_consideration:manage', $context)) {
     // If the application has already been responded to, display the response instead of the form
     echo html_writer::tag('h4', get_string('response', 'local_special_consideration'));
-    echo html_writer::tag('p', get_string('status', 'local_special_consideration') . ': ' . $application->status);
+    echo html_writer::tag('p', get_string('status', 'local_special_consideration') . ': ' . get_readable_status($application->status));
     echo html_writer::tag('p', get_string('feedback', 'local_special_consideration') . ': ' . $application->feedback);
 }
 

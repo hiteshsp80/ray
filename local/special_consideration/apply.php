@@ -1,6 +1,7 @@
 <?php
 require_once('../../config.php');
 require_once($CFG->dirroot.'/local/special_consideration/classes/form/application_form.php');
+require_once($CFG->dirroot.'/course/lib.php');
 
 $courseid = optional_param('courseid', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHA);
@@ -90,20 +91,23 @@ if ($canManage) {
         
         $pendingapplications = $DB->get_records_sql(
             "SELECT sc.*, u.firstname, u.lastname
-             FROM {local_special_consideration} sc
-             JOIN {user} u ON sc.userid = u.id
-             WHERE sc.courseid = :courseid AND sc.status = 'pending'
-             ORDER BY sc.timecreated DESC",
-            array('courseid' => $courseid)
-        );
+            FROM {local_special_consideration} sc
+            JOIN {user} u ON sc.userid = u.id
+            WHERE sc.courseid = :courseid AND sc.status = 'pending'
+            ORDER BY sc.timecreated DESC",
+           array('courseid' => $courseid)
+);
 
         if (empty($pendingapplications)) {
             echo html_writer::tag('p', get_string('nopendingapplications', 'local_special_consideration'));
         } else {
+            $modinfo = get_fast_modinfo($course); //get course module information
+
             $table = new html_table();
             $table->head = array(
                 get_string('datesubmitted', 'local_special_consideration'),
                 get_string('type', 'local_special_consideration'),
+                get_string('affectedassessment', 'local_special_consideration'),
                 get_string('status', 'local_special_consideration'),
                 get_string('studentname', 'local_special_consideration'),
                 get_string('actions', 'local_special_consideration')
@@ -113,9 +117,16 @@ if ($canManage) {
                 $viewurl = new moodle_url('/local/special_consideration/view.php', array('id' => $application->id, 'courseid' => $courseid));
                 $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
                 $displayType = get_readable_type($application->type);
+                $affectedAssessment = get_string('notspecified', 'local_special_consideration');
+                if (!empty($application->affectedassessment) && isset($modinfo->cms[$application->affectedassessment])) {
+                    $cm = $modinfo->cms[$application->affectedassessment];
+                    $affectedAssessment = $cm->name;
+                }
+                
                 $row = array(
                     userdate($application->timecreated),
                     $displayType,
+                    $affectedAssessment,
                     get_readable_status($application->status), 
                     fullname($application),
                     $actions
@@ -218,11 +229,7 @@ if ($canManage) {
                 $editurl = new moodle_url('/local/special_consideration/edit.php', array('id' => $application->id, 'courseid' => $courseid));
                 
                 $actions = html_writer::link($viewurl, get_string('view', 'local_special_consideration'));
-                // if ($application->status === 'pending') {
-                //     $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
-                //     $actions .= ' | ' . html_writer::link('#', get_string('withdraw', 'local_special_consideration'), 
-                //         array('class' => 'withdraw-button', 'data-id' => $application->id));
-                // }
+             
                 if ($application->status === 'pending' || $application->status === 'more_info') {
                     $actions .= ' | ' . html_writer::link($editurl, get_string('edit', 'local_special_consideration'));
                 }
