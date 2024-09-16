@@ -92,7 +92,16 @@ $table->data[] = array(get_string('dateaffected', 'local_special_consideration')
 $table->data[] = array(get_string('reason', 'local_special_consideration'), $application->reason);
 $table->data[] = array(get_string('additionalcomments', 'local_special_consideration'), $application->additionalcomments);
 $table->data[] = array(get_string('status', 'local_special_consideration'), get_readable_status($application->status));
+
+
+// add feedback 
+if (!empty($application->feedback)) {
+    $table->data[] = array(get_string('feedback', 'local_special_consideration'), $application->feedback);
+}
+
 echo html_writer::table($table);
+
+
 
 //add reviewer
 if (!empty($application->reviewerid)) {
