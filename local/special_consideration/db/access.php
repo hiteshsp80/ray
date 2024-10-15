@@ -27,5 +27,14 @@ $capabilities = array(
         'editingteacher' => CAP_ALLOW,
         'manager' => CAP_ALLOW
     )
-)
+    ),
+    'local/special_consideration:manage' => array(
+        'riskbitmask' => RISK_DATALOSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => array(
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW
+        )
+    ),
 );
