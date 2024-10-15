@@ -13,9 +13,10 @@ class response_form extends \moodleform {
         $mform->setType('id', PARAM_INT);
 
         $statuses = array(
-            'approved' => get_string('approved', 'local_special_consideration'),
-            'declined' => get_string('declined', 'local_special_consideration'),
-            'more_info' => get_string('more_info', 'local_special_consideration')
+            'approved' => get_string('status_approved', 'local_special_consideration'),
+            'declined' => get_string('status_declined', 'local_special_consideration'),
+            'more_info' => get_string('status_more_info', 'local_special_consideration')
+    
         );
         $mform->addElement('select', 'status', get_string('status', 'local_special_consideration'), $statuses);
         $mform->addRule('status', null, 'required', null, 'client');
