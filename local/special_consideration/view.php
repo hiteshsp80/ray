@@ -1,6 +1,8 @@
 <?php
 require_once('../../config.php');
 require_once($CFG->dirroot.'/local/special_consideration/classes/form/application_form.php');
+require_once($CFG->dirroot.'/local/special_consideration/lib.php'); 
+require_once($CFG->dirroot.'/mod/assign/locallib.php');
 
 $id = required_param('id', PARAM_INT);
 $courseid = optional_param('courseid', 0, PARAM_INT);
@@ -52,6 +54,38 @@ if (has_capability('local/special_consideration:manage', $context)) {
         
         $DB->update_record('local_special_consideration', $application);
         
+        // if ($fromform->status === 'approved' && $application->type === 'extension') {
+        //     if (update_assignment_deadline($application)) {
+        //         \core\notification::success(get_string('deadlineupdated', 'local_special_consideration'));
+        //         mtrace("Assignment deadline successfully updated for application {$application->id}");
+        //     } else {
+        //         \core\notification::error(get_string('deadlineupdatefailed', 'local_special_consideration'));
+        //         mtrace("Failed to update assignment deadline for application {$application->id}");
+        //     }
+        // }
+        if ($fromform->status === 'approved' && $application->type === 'extension') {
+            if (update_assignment_deadline($application)) {
+                \core\notification::success(get_string('deadlineupdated', 'local_special_consideration'));
+        
+            } else {
+                \core\notification::error(get_string('deadlineupdatefailed', 'local_special_consideration'));
+            }
+        }
+
+        //send notification to students
+        $message = new \core\message\message();
+        $message->component = 'local_special_consideration';
+        $message->name = 'notification';
+        $message->userfrom = $USER->id;
+        $message->userto = $user->id;
+        $message->subject = "Update on Special Consideration Request";
+        $message->fullmessage = "Update received on submitted application by {$USER->firstname} {$USER->lastname}.";
+        $message->fullmessageformat = FORMAT_MOODLE;
+        $message->fullmessagehtml = "<p>Update received on submitted application by <strong>{$USER->firstname} {$USER->lastname}</strong>. <a href='{$CFG->wwwroot}/local/special_consideration/view.php?id={$id}'>Click here to view the request</a>.</p>";
+        $message->smallmessage = 'Update on your special consideration request';
+        $message->notification = 1;
+        message_send($message);
+
         // Redirect back to the list of applications
         redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)),
                  get_string('applicationupdated', 'local_special_consideration'),
@@ -71,7 +105,7 @@ function get_readable_type($type) {
 $table = new html_table();
 $table->attributes['class'] = 'generaltable';
 $table->data[] = array(get_string('applicant', 'local_special_consideration'), fullname($user));
-$table->data[] = array(get_string('studentid', 'local_special_consideration'), $user->idnumber);
+$table->data[] = array(get_string('studentid', 'local_special_consideration'), $user->id);
 
 $displayType = get_string('type_' . $application->type, 'local_special_consideration', $application->type);
 $table->data[] = array(get_string('status', 'local_special_consideration'), get_readable_status($application->status));
@@ -88,7 +122,11 @@ if (!empty($application->affectedassessment)) {
 }
 
 $table->data[] = array(get_string('affectedassessment', 'local_special_consideration'), $assessment_name);
-$table->data[] = array(get_string('dateaffected', 'local_special_consideration'), userdate($application->dateaffected));
+
+if ($application->type === 'extension' && !empty($application->dateaffected)) {
+    $table->data[] = array(get_string('new_due_date', 'local_special_consideration'), userdate($application->dateaffected));
+}
+
 $table->data[] = array(get_string('reason', 'local_special_consideration'), $application->reason);
 $table->data[] = array(get_string('additionalcomments', 'local_special_consideration'), $application->additionalcomments);
 $table->data[] = array(get_string('status', 'local_special_consideration'), get_readable_status($application->status));
@@ -100,7 +138,6 @@ if (!empty($application->feedback)) {
 }
 
 echo html_writer::table($table);
-
 
 
 //add reviewer
@@ -160,6 +197,8 @@ if (has_capability('local/special_consideration:manage', $context) && $applicati
         $application->timemodified = time();
         
         $DB->update_record('local_special_consideration', $application);
+
+
         
         // Redirect back to the list of applications
         redirect(new moodle_url('/local/special_consideration/apply.php', array('courseid' => $courseid)),

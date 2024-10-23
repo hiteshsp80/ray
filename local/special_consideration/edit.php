@@ -25,10 +25,9 @@ if ($application->userid != $USER->id) {
     print_error('nopermissions', 'error', '', 'edit this application');
 }
 
-if ($application->status !== 'pending') {
+if ($application->status !== 'pending' && $application->status !== 'more_info') {
     print_error('cantedit', 'local_special_consideration');
 }
-
 $PAGE->set_url(new moodle_url('/local/special_consideration/edit.php', array('id' => $id, 'courseid' => $courseid)));
 $PAGE->set_title(get_string('editapplication', 'local_special_consideration'));
 $PAGE->set_heading($course->fullname);
@@ -49,6 +48,7 @@ if ($mform->is_cancelled()) {
     $application->reason = $fromform->reason;
     $application->additionalcomments = $fromform->additionalcomments;
     $application->timemodified = time();
+    $application->status = 'pending';  //reset to 'pending'
 
     $DB->update_record('local_special_consideration', $application);
 

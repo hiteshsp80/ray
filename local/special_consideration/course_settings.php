@@ -26,6 +26,7 @@ if ($mform->is_cancelled()) {
     set_config('allownafiles_' . $id, $data->allownafiles, 'local_special_consideration');
     set_config('maxfilesize_' . $id, $data->maxfilesize, 'local_special_consideration');
     set_config('allowedfiletypes_' . $id, json_encode($data->allowedfiletypes), 'local_special_consideration');
+    set_config('specialannouncement_' . $id, $data->specialannouncement['text'], 'local_special_consideration'); // Save the special announcement
 
     redirect(new moodle_url('/course/view.php', array('id' => $data->id)), get_string('settingssaved', 'local_special_consideration'));
 }

@@ -9,10 +9,15 @@ class course_settings_form extends moodleform {
         $mform = $this->_form;
         $courseid = $this->_customdata['id'];
 
-           // Add a hidden field for course id
-    $mform->addElement('hidden', 'id');
-    $mform->setType('id', PARAM_INT);
-    $mform->setDefault('id', $courseid);
+        // Add a hidden field for course id
+        $mform->addElement('hidden', 'id');
+        $mform->setType('id', PARAM_INT);
+        $mform->setDefault('id', $courseid);
+
+        // Add a text box for special announcements
+        $mform->addElement('header', 'specialconsideration', get_string('specialconsideration', 'local_special_consideration'));
+        $mform->addElement('editor', 'specialannouncement', get_string('specialannouncement', 'local_special_consideration'), null, array('maxfiles' => EDITOR_UNLIMITED_FILES, 'noclean' => true, 'context' => context_course::instance($courseid)));
+        $mform->setType('specialannouncement', PARAM_RAW);
 
         // Who can approve/deny
         $approvers = array(
@@ -68,7 +73,8 @@ class course_settings_form extends moodleform {
             'showfutureonly' => get_config('local_special_consideration', 'showfutureonly_' . $courseid),
             'allownafiles' => get_config('local_special_consideration', 'allownafiles_' . $courseid),
             'maxfilesize' => get_config('local_special_consideration', 'maxfilesize_' . $courseid),
-            'allowedfiletypes' => json_decode(get_config('local_special_consideration', 'allowedfiletypes_' . $courseid), true)
+            'allowedfiletypes' => json_decode(get_config('local_special_consideration', 'allowedfiletypes_' . $courseid), true),
+            'specialannouncement' => array('text' => get_config('local_special_consideration', 'specialannouncement_' . $courseid), 'format' => FORMAT_HTML)
         ));
     }
 }
